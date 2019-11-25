@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum SimValues { VAlpha, VxAlpha, VyAlpha, VxVy };
 public class Simulation : MonoBehaviour {
 
 	public GameObject projectileObject;
