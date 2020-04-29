@@ -4,23 +4,28 @@ using UnityEngine;
 using Valve.VR;
 using Valve.VR.InteractionSystem;
 
+
+/// <summary>
+/// Record the objects velocity while in the hand and then simulate on release.
+/// </summary>
 [RequireComponent(typeof(LineRenderer))]
 [RequireComponent(typeof(Interactable))]
-public class VelocityInteractable : MonoBehaviour
+[RequireComponent(typeof(Rigidbody))]
+public class SimulatedInteractable : MonoBehaviour
 {
 
 	LineRenderer lr;
-	List<Point> points = new List<Point>();
 	Interactable interactable;
-	List<Vector3> ghosts = new List<Vector3>();
+	Rigidbody rb;
 	public GameObject ghost;
 
-	[HideInInspector]
-	public Vector3 startVelocities;
-	Vector3 startposition;
+	List<Point> points = new List<Point>();
+	List<Vector3> ghosts = new List<Vector3>();
+
+	Vector3 startVelocities = new Vector3();
+	Vector3 oldPosition = new Vector3();
 
 	float g = 9.82f;
-
 	bool simulating = false;
 	bool setToSimulate = false;
 
@@ -30,12 +35,16 @@ public class VelocityInteractable : MonoBehaviour
 		lr.positionCount = 0;
 
 		interactable = GetComponent<Interactable>();
+		rb = GetComponent<Rigidbody>();
 	}
+	
+
 	void Update()
 	{
-		if (interactable.attachedToHand)
+		if (interactable.attachedToHand != null)
 		{
 			setToSimulate = true;
+			// CLEAR VALUES: REMOVE OLD SIM
 			points.Clear(); // Clear points
 			ghosts.Clear();
 			lr.positionCount = 0; // Remove line renederer arc
@@ -43,7 +52,10 @@ public class VelocityInteractable : MonoBehaviour
 			{ // Go through every ghost and destroy them
 				GameObject.Destroy(child.gameObject);
 			}
-			transform.position = startposition; // Reset projectile position
+
+			//RECORD VELOCITY
+			startVelocities = (transform.position - oldPosition) / Time.deltaTime;
+			oldPosition = transform.position;
 		}
 		else
 		{
@@ -51,14 +63,15 @@ public class VelocityInteractable : MonoBehaviour
 			{
 				setToSimulate = false;
 				simulating = true;
+				rb.isKinematic = true;
 				StartCoroutine(Simulate()); // Begin simulation
 			}
 		}
-
+		
 	}
+
 	IEnumerator Simulate()
 	{
-		startposition = transform.position;
 		float Vx = startVelocities.x;
 		float Vy = startVelocities.y;
 		float Vz = startVelocities.z;
@@ -67,9 +80,11 @@ public class VelocityInteractable : MonoBehaviour
 
 		ghosts.Add(transform.position);
 
-		Vector3 oldPosition = startposition;
 		while (gameObject.transform.position.y > 0)
 		{
+			Vector3 oldPosition = transform.position;
+			Vy = startVelocities.y - (g * elapsed_time); // Update Vy
+			transform.Translate(Vx * Time.deltaTime, Vy * Time.deltaTime, Vz * Time.deltaTime); // Move projectile
 
 			// Create and add the point to the list of points
 			if (distance > 1)
@@ -84,7 +99,6 @@ public class VelocityInteractable : MonoBehaviour
 
 			elapsed_time += Time.deltaTime; // Update current time
 			distance += Vector3.Distance(oldPosition, transform.position);
-			oldPosition = transform.position;
 			yield return null;
 		}
 
@@ -95,6 +109,7 @@ public class VelocityInteractable : MonoBehaviour
 		DrawLineRenderer(); // Draw the line renderer arc using all the points positions
 							//points = ShortenList(points, Convert.ToInt32(distance)); // Shorten down the list to size calculated above
 		DrawGhosts(); // Draw the ghosts
+		rb.isKinematic = false;
 	}
 
 	void DrawLineRenderer()
@@ -115,7 +130,7 @@ public class VelocityInteractable : MonoBehaviour
 			lr.SetPosition(i, points[i].position);
 		}
 	}
-
+	
 	void DrawGhosts()
 	{
 		// Set every ghost's parent to the script-objects' transform, in order to clear them easily later. 
@@ -128,6 +143,6 @@ public class VelocityInteractable : MonoBehaviour
 			//GUI.Label(new Rect(newGhost.transform.position, new Vector2(50, 50)), "Helo");
 		}
 	}
-
+	
 
 }

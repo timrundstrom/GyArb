@@ -3,6 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// Enter values and a press a button for a simulated throw.
+/// Works but code is a mess.
+/// </summary>
 [RequireComponent(typeof(LineRenderer))]
 public class Simulation : MonoBehaviour
 {
@@ -38,6 +42,7 @@ public class Simulation : MonoBehaviour
 		lr.positionCount = 0;
 
 		startposition = transform.position;
+
 	}
 
 	public void OnSimulationSettingsUpdated()

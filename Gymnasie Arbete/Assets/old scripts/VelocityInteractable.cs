@@ -4,42 +4,39 @@ using UnityEngine;
 using Valve.VR;
 using Valve.VR.InteractionSystem;
 
+/// <summary>
+/// Constantly record velocities. And just paint out ghosts as it is thrown using unity physics and display the velocities at each ghost.
+/// </summary>
 [RequireComponent(typeof(LineRenderer))]
 [RequireComponent(typeof(Interactable))]
-[RequireComponent(typeof(Rigidbody))]
-public class SimulatedInteractable : MonoBehaviour
+public class VelocityInteractable : MonoBehaviour
 {
-
 	LineRenderer lr;
-	List<Point> points = new List<Point>();
 	Interactable interactable;
-	Rigidbody rb;
-	List<Vector3> ghosts = new List<Vector3>();
 	public GameObject ghost;
 
-	[HideInInspector]
-	public Vector3 startVelocities;
-	Vector3 startposition;
+	List<Point> points = new List<Point>();
+	List<Vector3> ghosts = new List<Vector3>();
 
-	float g = 9.82f;
+	Vector3 startVelocities = new Vector3();
+	Vector3 oldPosition = new Vector3();
 
 	bool simulating = false;
 	bool setToSimulate = false;
 
-	void Awake()
+	void Start()
 	{
 		lr = GetComponent<LineRenderer>();
 		lr.positionCount = 0;
 
 		interactable = GetComponent<Interactable>();
-		rb = GetComponent<Rigidbody>();
 	}
-
 	void Update()
 	{
-		if (interactable.attachedToHand)
+		if (interactable.attachedToHand != null)
 		{
 			setToSimulate = true;
+			// CLEAR VALUES: REMOVE OLD SIM
 			points.Clear(); // Clear points
 			ghosts.Clear();
 			lr.positionCount = 0; // Remove line renederer arc
@@ -47,7 +44,11 @@ public class SimulatedInteractable : MonoBehaviour
 			{ // Go through every ghost and destroy them
 				GameObject.Destroy(child.gameObject);
 			}
-			transform.position = startposition; // Reset projectile position
+
+			//RECORD VELOCITY
+			startVelocities = (transform.position - oldPosition) / Time.deltaTime;
+			oldPosition = transform.position;
+
 		}
 		else
 		{
@@ -55,29 +56,21 @@ public class SimulatedInteractable : MonoBehaviour
 			{
 				setToSimulate = false;
 				simulating = true;
-				rb.isKinematic = true;
 				StartCoroutine(Simulate()); // Begin simulation
 			}
 		}
 
 	}
-
 	IEnumerator Simulate()
 	{
-		startposition = transform.position;
-		float Vx = startVelocities.x;
-		float Vy = startVelocities.y;
-		float Vz = startVelocities.z;
 		float elapsed_time = 0;
 		float distance = 0;
 
 		ghosts.Add(transform.position);
 
+		Vector3 simOldPosition = transform.position;
 		while (gameObject.transform.position.y > 0)
 		{
-			Vector3 oldPosition = transform.position;
-			Vy = startVelocities.y - (g * elapsed_time); // Update Vy
-			transform.Translate(Vx * Time.deltaTime, Vy * Time.deltaTime, Vz * Time.deltaTime); // Move projectile
 
 			// Create and add the point to the list of points
 			if (distance > 1)
@@ -85,13 +78,15 @@ public class SimulatedInteractable : MonoBehaviour
 				ghosts.Add(transform.position);
 				distance = 0;
 			}
+			
 
-			Vector3 velocities = new Vector3(Vx, Vy, Vz);
+			Vector3 velocities = (transform.position - simOldPosition) / Time.deltaTime;
 			Point newPoint = new Point(transform.position, velocities, elapsed_time);
 			points.Add(newPoint);
 
 			elapsed_time += Time.deltaTime; // Update current time
-			distance += Vector3.Distance(oldPosition, transform.position);
+			distance += Vector3.Distance(simOldPosition, transform.position);
+			simOldPosition = transform.position;
 			yield return null;
 		}
 
@@ -102,7 +97,6 @@ public class SimulatedInteractable : MonoBehaviour
 		DrawLineRenderer(); // Draw the line renderer arc using all the points positions
 							//points = ShortenList(points, Convert.ToInt32(distance)); // Shorten down the list to size calculated above
 		DrawGhosts(); // Draw the ghosts
-		rb.isKinematic = false;
 	}
 
 	void DrawLineRenderer()
@@ -123,7 +117,7 @@ public class SimulatedInteractable : MonoBehaviour
 			lr.SetPosition(i, points[i].position);
 		}
 	}
-	
+
 	void DrawGhosts()
 	{
 		// Set every ghost's parent to the script-objects' transform, in order to clear them easily later. 
@@ -136,6 +130,6 @@ public class SimulatedInteractable : MonoBehaviour
 			//GUI.Label(new Rect(newGhost.transform.position, new Vector2(50, 50)), "Helo");
 		}
 	}
-	
+
 
 }
