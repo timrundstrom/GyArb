@@ -7,7 +7,7 @@ using Valve.VR.InteractionSystem;
 public class MovementController : MonoBehaviour {
 
 	public SteamVR_Action_Vector2 input;
-	float speed = 1;
+	float speed = 1.5f;
 	CharacterController characterController;
 
 	private void Start() {

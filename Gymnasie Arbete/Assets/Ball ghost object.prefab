@@ -26,7 +26,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3905131732400294100}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: 0}
+  m_LocalPosition: {x: 0, y: 1.52, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 1232961936942860817}
@@ -301,4 +301,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   text: {fileID: 3905131732400294100}
+  ghostmat: {fileID: 2100000, guid: 7f4cc56644cc77a45988eb34e669d0e9, type: 2}
+  ghostinvis: {fileID: 2100000, guid: 5d8a8fd4fcea76f43bfb9d426ab7f8be, type: 2}
   alwaysShow: 0
